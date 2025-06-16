@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Camera Database</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:nth-child(odd) {
+            background-color: #ffffff;
+        }
+        .link-container {
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+        .link {
+            display: inline-block; /* Display links on the same line */
+            margin-right: 10px; /* Add spacing between links */
+            cursor: pointer;
+            color: blue;
+            text-decoration: underline;
+        }
+        .database-heading {
+            margin-bottom: 2px; /* Adjust bottom margin of the heading */
+        }
+        .database-subheading {
+            margin-bottom: 10px; /* Adjust bottom margin of the heading */
+            font-weight: normal; /* Removes bold */
+            font-size: inherit; /* Inherits font size from the parent element */
+            margin: 10; /* Removes default margins */
+        }
+        #imageModal {
+            display: none;
+            position: fixed;
+            z-index:1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(100, 100, 100, 0.75);
+        }
+        #imageModal img {
+            margin: auto;
+            display: block;
+            width: 100%;
+            max-width: 1500px;
+            cursor: default;
+        }
+        #imageModal span {
+            cursor: pointer;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+            font-size: 35px;
+        }
+        img {
+            cursor: zoom-in;
+        }
+    </style>
+</head>
+<body>
+    <meta charset="UTF-8">
+    <h1 class="database-heading">NTU NOBIC Camera Database</h1>
+    <h2 class="database-subheading">NOBIC transforms the field of sensing by bringing image sensing into the digital age for researchers. This database compiles commercially available CMOS cameras from various manufacturers. Key characteristics of camera sensors are measured to facilitate comparison and selection for low cost microscopy applications.</h2>
+    <div class="link-container">
+        <a id="cameraInfoLink" class="link">Camera List</a>
+        <a id="setupLink" class="link">Setup/Abstract</a>
+        <a id="darkCurrentLink" class="link">Dark Current</a>
+        <a id="readNoiseLink" class="link">Read Noise</a>
+        <a id="QELink" class="link">Quantum Efficiency</a>
+        <a id="ThermalNoiseLink" class="link">Thermal Noise</a>
+        <a id="GainLink" class="link">Gain</a>
+    </div>
+    <div id="tableContainer">
+        <!-- Table will be dynamically created here -->
+    </div>
+    <!-- The Modal -->
+    <div id="imageModal">
+        <span onclick="closeModal()">&times;</span>
+        <img id="modalContent">
+    </div>
+    <script src="cam_details.js"></script>
+    <script src="common.js"></script>
+    <script>
+        document.getElementById('cameraInfoLink').addEventListener('click', function() {
+            document.getElementById('tableContainer').innerHTML = ''; // Clear existing content
+            loadScript('cam_list.js');
+        });
+
+        document.getElementById('setupLink').addEventListener('click', function() {
+            document.getElementById('tableContainer').innerHTML = ''; // Clear existing content
+            loadScript('cam_setup.js');
+        });
+
+        document.getElementById('darkCurrentLink').addEventListener('click', function() {
+            document.getElementById('tableContainer').innerHTML = ''; // Clear existing content
+            loadScript('cam_DC.js');
+        });
+
+        document.getElementById('readNoiseLink').addEventListener('click', function() {
+            document.getElementById('tableContainer').innerHTML = ''; // Clear existing content
+            loadScript('cam_RN.js');
+        });
+
+        document.getElementById('QELink').addEventListener('click', function() {
+            document.getElementById('tableContainer').innerHTML = ''; // Clear existing content
+            loadScript('cam_QE.js');
+        });
+
+        document.getElementById('ThermalNoiseLink').addEventListener('click', function() {
+            document.getElementById('tableContainer').innerHTML = ''; // Clear existing content
+            loadScript('cam_TN.js');
+        });
+
+        document.getElementById('GainLink').addEventListener('click', function() {
+            document.getElementById('tableContainer').innerHTML = ''; // Clear existing content
+            loadScript('cam_Gain.js');
+        });
+
+        // ESC key close the image zoom-in view
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape" || event.keyCode === 27) {
+                closeModal();
+            }
+        });
+
+        // Automatically load cam_List.js on page load
+        window.addEventListener('load', function() {
+            loadScript('cam_list.js');
+        });
+    </script>
+</body>
+</html>
