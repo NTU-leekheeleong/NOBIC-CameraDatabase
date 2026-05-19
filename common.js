@@ -1,28 +1,37 @@
 // Function to handle camera link click and display camera details
 function fetchCameraDetails(cam_model) {
-    // Clear the existing table
-    tableContainer.innerHTML = '';
-
-    // Dynamically load cam_details.js
-    const script = document.createElement('script');
-    script.src = 'cam_details.js';
-    script.onload = () => {
-        // Call the displayCameraDetails function from cam_details.js with cam_model
-        displayCameraDetails(cam_model);
-    };
-    document.head.appendChild(script);
+    const token = beginCameraDbView();
+    displayCameraDetails(cam_model, token);
 }
 
 function loadScript(scriptName, callback) {
-    fetch(scriptName)
-        .then(response => response.text())
-        .then(scriptText => {
-            eval(scriptText); // Execute the script text
-            if (callback) {
-                callback();
-            }
-        })
-        .catch(error => console.error(`Error loading ${scriptName}:`, error));
+    const token = beginCameraDbView();
+    document.querySelectorAll('script[data-dynamic-camera-db="true"]').forEach(script => script.remove());
+
+    const script = document.createElement('script');
+    script.src = `${scriptName}?view=${encodeURIComponent(token)}`;
+    script.dataset.dynamicCameraDb = 'true';
+    script.onload = () => {
+        if (callback && isCurrentCameraDbView(token)) {
+            callback(token);
+        }
+    };
+    script.onerror = () => console.error(`Error loading ${scriptName}`);
+    document.head.appendChild(script);
+    return token;
+}
+
+function beginCameraDbView() {
+    window.cameraDbViewToken = (window.cameraDbViewToken || 0) + 1;
+    const container = document.getElementById('tableContainer');
+    if (container) {
+        container.textContent = '';
+    }
+    return window.cameraDbViewToken;
+}
+
+function isCurrentCameraDbView(token) {
+    return token === window.cameraDbViewToken;
 }
 
 function zoomImage(src) {

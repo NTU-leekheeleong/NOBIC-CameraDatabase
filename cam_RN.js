@@ -1,77 +1,114 @@
-// Container element with id "tableContainer" has been declared in IDMxS_CameraDatabase.html
-// Assuming tableContainer is cleared before this script is loaded
+(() => {
+const viewToken = window.cameraDbViewToken;
 const tableContainer = document.querySelector('#tableContainer');
 
-// Create a new table and its elements
+function addHeader(row, html) {
+    const header = document.createElement('th');
+    header.innerHTML = html;
+    header.style.border = '1px solid var(--table-border)';
+    header.style.padding = '10px';
+    header.style.textAlign = 'center';
+    header.style.backgroundColor = 'var(--table-header-bg)';
+    row.appendChild(header);
+}
+
+function addTextCell(row, text, width) {
+    const cell = row.insertCell();
+    cell.textContent = text ?? '';
+    if (width) {
+        cell.style.width = width;
+    }
+    return cell;
+}
+
+function addNormalisedBar(row, value) {
+    const cell = row.insertCell();
+    cell.style.textAlign = 'center';
+
+    if (value === '') {
+        const tba = document.createElement('span');
+        tba.textContent = 'TBA';
+        tba.style.color = 'var(--muted-text-color)';
+        tba.style.fontWeight = 'bold';
+        cell.appendChild(tba);
+        return cell;
+    }
+
+    const track = document.createElement('div');
+    track.style.width = '180px';
+    track.style.height = '20px';
+    track.style.backgroundColor = 'var(--bar-track-bg)';
+    track.style.border = '1px solid var(--table-border)';
+    track.style.borderRadius = '3px';
+    track.style.overflow = 'hidden';
+
+    const fill = document.createElement('div');
+    const percent = Math.max(0, Math.min(100, Number(value) / 255 * 100));
+    fill.style.height = '100%';
+    fill.style.width = `${percent}%`;
+    fill.style.background = 'var(--bar-fill-bg)';
+    fill.style.transition = 'width 0.5s';
+    track.appendChild(fill);
+    cell.appendChild(track);
+    return cell;
+}
+
 const table = document.createElement('table');
 table.id = 'cameraTable';
-table.style.width = '1800px';
+table.style.width = 'auto';
 table.style.borderCollapse = 'collapse';
 const tableHead = document.createElement('thead');
 const tableBody = document.createElement('tbody');
 table.appendChild(tableHead);
 table.appendChild(tableBody);
 
-// Create and append the header row
 const headerRow = document.createElement('tr');
-const headers = [
-    "#", "Camera Manufacturer", "Model No", "Read Noise<br>(Normalised)", "Pixel Format Used for Test",
-    "Read Noise Pixel Image<br>(electron)"
-];
-headers.forEach(headerText => {
-    const header = document.createElement('th');
-    header.innerHTML = headerText;
-    header.style.border = '1px solid #ddd';
-    header.style.padding = '10px';
-    header.style.textAlign = 'center';
-    header.style.backgroundColor = '#f2f2f2';
-    headerRow.appendChild(header);
-});
-
+[
+    '#', 'Camera Manufacturer', 'Model No', 'Read Noise<br>(Normalised)',
+    'Pixel Format Used for Test', 'Read Noise Pixel Image<br>(electron)'
+].forEach(header => addHeader(headerRow, header));
 tableHead.appendChild(headerRow);
 
-// Fetch the data and populate the table
-fetch('IDMxS_CamDatabase.json')
-    .then(response => response.json())
+fetch('NOBIC_CamDatabase_1.json')
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to read NOBIC_CamDatabase_1.json');
+        }
+        return response.json();
+    })
     .then(data => {
+        if (!isCurrentCameraDbView(viewToken)) {
+            return;
+        }
+
         data.forEach((camera, index) => {
             const row = tableBody.insertRow();
-            row.innerHTML = `
-                <td style="width: 5%;">${index + 1}</td>
-                <td style="width: 10%;">${camera.cam_manufacturer}</td>
-                <td class="clickable-model" style="width: 20%;">${camera.model}</td>
-                <td style="width: 15%; text-align: center;">
-                    ${
-                        camera.readNoise_normalised !== ""
-                            ? `<div style="width: 100%; height: 20px; background-color: #f0f0f0; border: 1px solid #ddd; border-radius: 3px; overflow: hidden;">
-                                <div style="height: 100%; width: ${camera.readNoise_normalised / 255 * 100}%; 
-                                    background: linear-gradient(to right, #6ecf83, #6ecf83); transition: width 0.5s;">
-                                </div>
-                            </div>`
-                            : `<span style="color: gray; font-weight: bold;">TBA</span>`
-                    }
-                </td>
-                <td style="width: 12%; text-align: center;">${camera.pixelFormat_DC_Test}</td>
-                <td style="width: 35%; text-align: center;">
-                    <img src="./${camera.image_folder}/RN-el.gif" alt="Read Noise (electron) of ${camera.model}" style="width: 100%; height: 100%; cursor: zoom-in;">
-                </td>
-            `;
-            // Add click event listener to the model cell
-            const modelCell = row.querySelector('.clickable-model');
-            modelCell.style.cursor = 'pointer';
-            modelCell.style.color = 'blue';
-            modelCell.style.textDecoration = 'underline';
-            modelCell.addEventListener('click', () => {
-                loadScript('cam_details.js', () => displayCameraDetails(camera.model));
-            });
+            addTextCell(row, index + 1);
+            addTextCell(row, camera.cam_manufacturer);
 
-            // Add click event listener to the image
-            const img1Element = row.cells[5].querySelector('img');
-            img1Element.addEventListener('click', () => zoomImage(camera.image_folder + '/RN-el.gif' ));
+            const modelCell = addTextCell(row, camera.model);
+            modelCell.style.cursor = 'pointer';
+            modelCell.style.color = 'var(--link-color)';
+            modelCell.style.textDecoration = 'underline';
+            modelCell.addEventListener('click', () => fetchCameraDetails(camera.model));
+
+            addNormalisedBar(row, camera.readNoise_normalised);
+            addTextCell(row, camera.pixelFormat_DC_Test).style.textAlign = 'center';
+
+            const imageSrc = `./${camera.image_folder}/RN-el.gif`;
+            const imgCell = row.insertCell();
+            imgCell.style.textAlign = 'center';
+            const img = document.createElement('img');
+            img.src = imageSrc;
+            img.alt = `Read Noise (electron) of ${camera.model}`;
+            img.style.width = '420px';
+            img.style.height = 'auto';
+            img.style.cursor = 'zoom-in';
+            img.addEventListener('click', () => zoomImage(`${camera.image_folder}/RN-el.gif`));
+            imgCell.appendChild(img);
         });
-        // Append the created table to the tableContainer
+
         tableContainer.appendChild(table);
     })
     .catch(error => console.error('Error loading the camera data:', error));
-
-    
+})();

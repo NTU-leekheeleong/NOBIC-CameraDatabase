@@ -1,13 +1,16 @@
 // Function to display camera details
-function displayCameraDetails(cam_model) {
-    fetch('IDMxS_CamDatabase.json')
+function displayCameraDetails(cam_model, viewToken = window.cameraDbViewToken) {
+    fetch('NOBIC_CamDatabase_1.json')
         .then(response => {
             if (!response.ok) {
-                throw new Error('Failed to read IDMxS_CamDatabase.json');
+                throw new Error('Failed to read NOBIC_CamDatabase_1.json');
             }
             return response.json();
         })
         .then(data => {
+            if (!isCurrentCameraDbView(viewToken)) {
+                return;
+            }
             const filteredCamera = data.filter(camera => camera.model === cam_model);
             if (filteredCamera.length > 0) {
                 displayselectedCam(filteredCamera[0]);
@@ -32,7 +35,7 @@ function displayselectedCam(selectedCamera) {
     const testResultTable = createTestResultTable(selectedCamera);
     const citationText = createCitationText();
 
-    container.innerHTML = '';
+    container.textContent = '';
     container.appendChild(parameterTable);
     container.appendChild(document.createElement('hr'));
         container.appendChild(parameterGraph);
@@ -79,6 +82,7 @@ function createParameterTable(selectedCamera) {
     const specSheetLink = document.createElement('a');
     specSheetLink.href = selectedCamera['cam_URL'];
     specSheetLink.target = "_blank";
+    specSheetLink.rel = "noopener noreferrer";
     specSheetLink.textContent = "Spec Sheet";
 
     const rowData = [
@@ -176,7 +180,7 @@ function createParameterGraph(selectedCamera) {
 function createTestResultTable(selectedCamera) {
     const table = document.createElement('table');
     table.id = 'testResultTable';
-    table.style.width = '1500px';
+    table.style.width = '100%';
     table.style.borderCollapse = 'collapse';
 
     const headers = ["Parameter", "Measured/Computed Pixel-wise Images", "Remarks"];
@@ -197,8 +201,8 @@ function createTestResultTable(selectedCamera) {
         { parameter: "Mean vs Exposure", imageSrc: selectedCamera['image_folder'] + '/' + selectedCamera['image_meanExpo'], remarks: selectedCamera['remarksMeanExpo'] },
         { parameter: "Gain Estimation (counts/electron)", imageSrc: selectedCamera['image_folder'] + "/Gain.gif", remarks: selectedCamera['remarksGain'] },
         { parameter: "Dark Current Estimation (counts/s)", imageSrc: selectedCamera['image_folder'] + "/DC_per_sec.gif", remarks: selectedCamera['remarksDC'] },
-        { parameter: "Thermal Noise Estimation(counts²/s)", imageSrc: selectedCamera['image_folder'] + "/TN_sq_per_sec.gif", remarks: selectedCamera['remarksTN'] },
-        { parameter: "Read Noise Estimation (counts²)", imageSrc: selectedCamera['image_folder'] + "/RN_sq.gif", remarks: selectedCamera['remarksRN'] }
+        { parameter: "Thermal Noise Estimation(counts^2/s)", imageSrc: selectedCamera['image_folder'] + "/TN_sq_per_sec.gif", remarks: selectedCamera['remarksTN'] },
+        { parameter: "Read Noise Estimation (counts^2)", imageSrc: selectedCamera['image_folder'] + "/RN_sq.gif", remarks: selectedCamera['remarksRN'] }
     ];
 
     secondTableData.forEach(data => {
@@ -250,20 +254,20 @@ function createImageCell(imageSrc, altText) {
 }
 
 function styleHeaderCell(cell) {
-    cell.style.border = '1px solid #ddd';
+    cell.style.border = '1px solid var(--table-border)';
     cell.style.padding = '8px';
     cell.style.textAlign = 'center';
-    cell.style.backgroundColor = '#f2f2f2';
+    cell.style.backgroundColor = 'var(--table-header-bg)';
 }
 
 function styleDataCell(cell) {
-    cell.style.border = '1px solid #ddd';
+    cell.style.border = '1px solid var(--table-border)';
     cell.style.padding = '8px';
     cell.style.textAlign = 'center';
 }
 
 function styleRemarksCell(cell) {
-    cell.style.border = '1px solid #ddd';
+    cell.style.border = '1px solid var(--table-border)';
     cell.style.padding = '8px';
     cell.style.textAlign = 'left';
     cell.style.verticalAlign = 'top';
